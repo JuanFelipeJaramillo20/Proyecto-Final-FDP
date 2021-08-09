@@ -1,0 +1,247 @@
+;; The first three lines of this file were inserted by DrRacket. They record metadata
+;; about the language level of this file in a form that our tools can easily process.
+#reader(lib "htdp-advanced-reader.ss" "lang")((modname |Proyecto final, sistema de admisiones Tulua.|) (read-case-sensitive #t) (teachpacks ()) (htdp-settings #(#t constructor repeating-decimal #t #t none #f () #f)))
+(require 2htdp/batch-io)
+(define-struct aspirante (numero-inscripcion nombre apellido c1 c2 c3 c4 c5 codigo-programa))
+ 
+;; Autor: Paola Andrea Dominguez - 202059956 ,  Juan Felipe Jaramillo - 202060257
+;; Fecha de Creación: 26 de Septiembre de 2020
+;; Contrato: Cargar-datos: string -> lista de empleados
+;; Propósito: Esta función lee un archivo del cual le pasamos la ubicación como parámetro, y retorna los datos leidos como una lista de empleados.
+;; Ejemplos:
+;; (cargar-datos "Data/Empleados.txt"), retorna:
+;; Definición:
+(define vectorAspirantes empty) ;; Variable de lista de empleados
+ 
+(define (cargar-datos ubicacion)
+  (local
+    (
+     (define (cargarAspirantes listaAspirantes)
+       (cond
+         [(empty? listaAspirantes) empty]
+         [(not (cons? listaAspirantes)) "Porfavor cargue una lista"]
+         [(cons? (first listaAspirantes))
+          (cons
+           (make-aspirante
+            (string->number (first (first listaAspirantes)))
+            (second (first listaAspirantes))
+            (third (first listaAspirantes))
+            (string->number (fourth (first listaAspirantes)))
+            (string->number (fifth (first listaAspirantes)))
+            (string->number (sixth (first listaAspirantes)))
+            (string->number (seventh (first listaAspirantes)))
+            (string->number (first (rest (rest (rest (rest (rest (rest (rest (first listaAspirantes))))))))))
+            (string->number (first (rest (rest (rest (rest (rest (rest (rest (rest (first listaAspirantes)))))))))))
+            
+            ) (cargarAspirantes (rest listaAspirantes))
+              )]
+         [else (error "Error al cargar los Aspirantes. Por favor intente de nuevo.")]
+         ))
+     )
+    (begin
+      (set! vectorAspirantes (cargarAspirantes (read-words/line ubicacion)))
+      (set! vectorAspirantes (list->vector vectorAspirantes))
+      (display "Los aspirantes fueron cargados correctamente!")
+      )
+    
+    ))
+ 
+ 
+(cargar-datos "datos/lista-aspirantes.txt")
+ 
+ 
+(define-struct aspi-programa (codigo-inscri nombre apellido puntaje))
+ 
+;;funcion para generar listado
+ 
+(define (generar-listado ubicacion codigo)
+  (local
+    (
+     (define (lista-a-string lista)
+            (cond
+              [(empty? lista) ""]
+              [else (string-append
+                     (number->string (aspi-programa-codigo-inscri (first lista)))
+                     " "
+                     (aspi-programa-nombre (first lista))
+                     " "
+                     (aspi-programa-apellido  (first lista))
+                     " "
+                     (number->string (aspi-programa-puntaje (first lista)))
+                     "\n"
+                     (lista-a-string (rest lista))
+                     )]
+              ))
+     
+     (define (ordenar-aspirante lstAspirantes)
+       (local
+         ((define (ordenar lstA f)
+            (cond
+              [(empty? lstA) empty]
+              [else 
+               (local
+                 (
+                  (define (ordenar-aux aspirante lstO f)
+                    (cond
+                      [(empty? lstO) (list aspirante)]
+                      [(f aspirante (first lstO)) (cons aspirante lstO)]
+                      [else (cons (first lstO) (ordenar-aux aspirante (rest lstO) f))
+                            ]
+                      ))
+                  ) (ordenar-aux (first lstA) (ordenar (rest lstA) f) f))
+               ]
+              )))  (ordenar lstAspirantes (lambda (x y) (> (aspi-programa-puntaje x)
+                                                           (aspi-programa-puntaje y)
+                                                           )))
+         ))                                     
+     
+     (define (filtro lst f)
+       (cond
+         [(empty? lst) empty]
+         [else
+          (local
+            (
+             (define resto (filtro (rest lst) f))
+             (define primero (first lst))
+             )
+            (cond
+              [(f primero ) (cons primero resto)]
+              [else resto])
+            )]
+         ))
+     
+     (define (calcular-porcentaje lista codigo)
+       (cond
+         [(empty? lista)empty]
+         [else
+          (local
+            (
+             (define (multiplicacion-porcentajes p1 p2 p3 p4 p5)
+               (+ (* (aspirante-c1(first lista)) p1)
+                  (* (aspirante-c2(first lista)) p2)
+                  (* (aspirante-c3(first lista)) p3)
+                  (* (aspirante-c4(first lista)) p4)
+                  (* (aspirante-c5(first lista)) p5)
+                  ))
+             )
+            (cons
+             (make-aspi-programa
+              (aspirante-numero-inscripcion (first lista))
+              (aspirante-nombre (first lista))
+              (aspirante-apellido (first lista))
+              (cond
+                [(equal? "3743" codigo)(multiplicacion-porcentajes 0.21 0.26 0.15 0.15 0.23)]                        
+                [(equal? "2724" codigo)(multiplicacion-porcentajes 0.21 0.26 0.15 0.15 0.23)]                 
+                [(equal? "2710" codigo)(multiplicacion-porcentajes 0.25 0.25 0.25 0.15 0.10)]
+                [(equal? "3753" codigo)(multiplicacion-porcentajes 0.15 0.35 0.30 0.15 0.05)]
+                [(equal? "2712" codigo)(multiplicacion-porcentajes 0.15 0.35 0.40 0.05 0.05)]
+                [(equal? "3249" codigo)(multiplicacion-porcentajes 0.40 0.10 0.10 0.40 0)] 
+                [(equal? "3841" codigo)(multiplicacion-porcentajes 0.20 0.35 0.15 0.20 0.10)]
+                [(equal? "3249" codigo)(multiplicacion-porcentajes 0.30 0.30 0.10 0.20 0.10)]
+                ))
+             (calcular-porcentaje (rest lista) codigo ))
+            )]
+         ))
+     
+     ) (write-file ubicacion
+                   (lista-a-string (ordenar-aspirante
+                                    (calcular-porcentaje
+                                     (filtro (vector->list vectorAspirantes) (lambda (x)(equal? (aspirante-codigo-programa x) (string->number codigo))))
+                                               codigo)))
+    )))
+(generar-listado "datos/ordenados-3743.txt" "3743")
+(generar-listado "datos/ordenados-2724.txt" "2724")
+(generar-listado "datos/ordenados-2710.txt" "2710")
+(generar-listado "datos/ordenados-3753.txt" "3753")
+(generar-listado "datos/ordenados-2712.txt" "2712")
+(generar-listado "datos/ordenados-3249.txt" "3249")
+(generar-listado "datos/ordenados-3841.txt" "3841")
+(generar-listado "datos/ordenados-3249.txt" "3249")
+;;Punto 3
+(define (eliminar-aspirante listanum)
+  (local
+    (
+     (define (eliminar listaAspi listanum)
+       (cond
+         [(empty? listaAspi) empty]
+         [else
+          (local
+            (
+             (define (verificar-iguales aspirante listan)
+               (cond
+                 [(empty? listan) #f]
+                 [(equal? (aspirante-numero-inscripcion aspirante) (first listan)) #t]
+                 [else (verificar-iguales aspirante (rest listan))]
+                 )
+               ))
+            (cond
+              [(verificar-iguales (first listaAspi) listanum)
+               (begin
+                 (display (string-append
+                           (number->string (aspirante-numero-inscripcion(first listaAspi)))
+                           " "
+                           (aspirante-nombre (first listaAspi))
+                           " "
+                           (aspirante-apellido (first listaAspi))
+                           " "
+                           (number->string (aspirante-c1 (first listaAspi)))
+                           " "
+                           (number->string (aspirante-c2 (first listaAspi)))
+                           " "
+                           (number->string (aspirante-c3 (first listaAspi)))
+                           " "
+                           (number->string (aspirante-c4 (first listaAspi)))
+                           " "
+                           (number->string (aspirante-c5 (first listaAspi)))
+                           " "
+                           (number->string (aspirante-codigo-programa (first listaAspi)))
+                           "\n"))
+                 (eliminar (rest listaAspi) listanum)
+                 )]
+                      
+         [else (cons (first listaAspi) (eliminar (rest listaAspi) listanum))
+               ]
+         ))]
+         ))) (begin
+               (set! vectorAspirantes (eliminar (vector->list vectorAspirantes) listanum))
+               (display "Los estudiantes fueron eliminados, ahora podrán concentrarse en sus estudios")
+               )
+     ))
+
+
+
+;;Punto 4
+(define (guardar-aspirantes ubicacion)
+  (local
+    (
+     (define (lista-a-string lista)
+      (cond
+       [(empty? lista) ""]
+       [else (string-append
+           (number->string (aspirante-numero-inscripcion (first lista)))
+           " "
+           (aspirante-nombre (first lista))
+           " "
+            (aspirante-apellido  (first lista))
+           " "
+           (number->string (aspirante-c1 (first lista)))
+           " "
+           (number->string (aspirante-c2 (first lista)))
+           " "
+           (number->string (aspirante-c3 (first lista)))
+           " "
+           (number->string (aspirante-c4 (first lista)))
+           " "
+           (number->string (aspirante-c5 (first lista)))
+           " "
+           (number->string (aspirante-codigo-programa (first lista)))
+           "\n"
+           (lista-a-string (rest lista))
+           )]
+    ))
+     )
+    (
+     (write-file ubicacion (lista-a-string  vectorAspirantes))
+     )
+    )
+  )
